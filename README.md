@@ -9,7 +9,7 @@ This library aims to bring extension support in Electron up to the level you'd c
 ## Install
 
 ```
-npm install electron-chrome-extensions
+npm install electron-chrome-extensions-suit
 ```
 
 ## Screenshots
