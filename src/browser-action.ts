@@ -59,6 +59,35 @@ export const injectBrowserAction = () => {
         invoke('browserAction.removeObserver', partition)
       }
     },
+
+    // New methods for tooltips
+    setTooltip(extensionId: string, tooltip: string) {
+      const action = actionMap.get(extensionId)
+      if (action) {
+        action.tooltip = tooltip
+        internalEmitter.emit('update', { actions: Array.from(actionMap.values()) })
+      }
+    },
+    getTooltip(extensionId: string): string | undefined {
+      const action = actionMap.get(extensionId)
+      return action?.tooltip
+    },
+
+    // New methods for enabling/disabling actions
+    enableAction(extensionId: string) {
+      const action = actionMap.get(extensionId)
+      if (action) {
+        action.enabled = true
+        internalEmitter.emit('update', { actions: Array.from(actionMap.values()) })
+      }
+    },
+    disableAction(extensionId: string) {
+      const action = actionMap.get(extensionId)
+      if (action) {
+        action.enabled = false
+        internalEmitter.emit('update', { actions: Array.from(actionMap.values()) })
+      }
+    },
   }
 
   ipcRenderer.on('browserAction.update', () => {
@@ -174,6 +203,15 @@ export const injectBrowserAction = () => {
           badge.className = 'badge'
           ;(badge as any).part = 'badge'
           this.appendChild(badge)
+
+          // Add event listener for badge click
+          badge.addEventListener('click', (event) => {
+            event.stopImmediatePropagation()
+            bA.addEventListener('badgeClick', () => {
+              // Custom logic for badge click event
+              console.log(`Badge clicked for action: ${this.id}`)
+            })
+          })
         }
         return badge
       }
@@ -215,18 +253,22 @@ export const injectBrowserAction = () => {
         const info = { ...tabInfo, ...action }
 
         this.title = typeof info.title === 'string' ? info.title : ''
+        this.title = bA.getTooltip(this.id) || this.title // Set tooltip if available
 
         this.updateIcon(info)
 
         if (info.text) {
           const badge = this.getBadge()
           badge.textContent = info.text
-          badge.style.color = '#fff' // TODO: determine bg lightness?
-          badge.style.backgroundColor = info.color
+          badge.style.color = info.textColor || '#fff' // Default to white if no color specified
+          badge.style.backgroundColor = info.color || 'rgba(0, 0, 0, 0.7)' // Default to semi-transparent black if no color specified
         } else if (this.badge) {
           this.badge.remove()
           this.badge = undefined
         }
+
+        // Set enabled/disabled state
+        this.disabled = !info.enabled
       }
     }
 
