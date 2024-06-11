@@ -88,6 +88,24 @@ export const injectBrowserAction = () => {
         internalEmitter.emit('update', { actions: Array.from(actionMap.values()) })
       }
     },
+
+    // New methods for dynamic visibility
+    setVisibility(extensionId: string, visible: boolean) {
+      const action = actionMap.get(extensionId)
+      if (action) {
+        action.visible = visible
+        internalEmitter.emit('update', { actions: Array.from(actionMap.values()) })
+      }
+    },
+
+    // New methods for action priorities
+    setPriority(extensionId: string, priority: number) {
+      const action = actionMap.get(extensionId)
+      if (action) {
+        action.priority = priority
+        internalEmitter.emit('update', { actions: Array.from(actionMap.values()) })
+      }
+    }
   }
 
   ipcRenderer.on('browserAction.update', () => {
@@ -142,9 +160,10 @@ export const injectBrowserAction = () => {
       constructor() {
         super()
 
-        // TODO: event delegation
         this.addEventListener('click', this.onClick.bind(this))
         this.addEventListener('contextmenu', this.onContextMenu.bind(this))
+        this.addEventListener('mouseover', this.onHover.bind(this))  // Hover event listener
+        this.addEventListener('keydown', this.onKeyDown.bind(this))  // Keyboard navigation support
       }
 
       connectedCallback() {
@@ -194,6 +213,18 @@ export const injectBrowserAction = () => {
         event.preventDefault()
 
         this.activate(event)
+      }
+
+      private onHover(event: MouseEvent) {
+        // Custom logic for hover event
+        console.log(`Action hovered: ${this.id}`)
+        // Optionally, you can emit an event or perform other actions
+      }
+
+      private onKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          this.activate(event)
+        }
       }
 
       private getBadge() {
@@ -269,6 +300,9 @@ export const injectBrowserAction = () => {
 
         // Set enabled/disabled state
         this.disabled = !info.enabled
+
+        // Set visibility
+        this.style.display = info.visible ? 'block' : 'none'
       }
     }
 
@@ -404,7 +438,10 @@ export const injectBrowserAction = () => {
         const tabId =
           typeof this.tab === 'number' && this.tab >= 0 ? this.tab : state.activeTabId || -1
 
-        for (const action of state.actions) {
+        // Sort actions by priority
+        const sortedActions = state.actions.sort((a: any, b: any) => b.priority - a.priority)
+
+        for (const action of sortedActions) {
           let browserActionNode = this.shadowRoot?.querySelector(
             `[id=${action.id}]`
           ) as BrowserActionElement
