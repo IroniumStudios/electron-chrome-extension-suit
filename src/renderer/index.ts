@@ -34,7 +34,6 @@ export const injectExtensionAPIs = () => {
     try {
       result = await ipcRenderer.invoke('crx-msg', extensionId, fnName, ...args)
     } catch (e) {
-      // TODO: Set chrome.runtime.lastError?
       console.error(e)
       result = undefined
     }
@@ -56,18 +55,12 @@ export const injectExtensionAPIs = () => {
     removeExtensionListener,
   }
 
-  // Function body to run in the main world.
-  // IMPORTANT: This must be self-contained, no closure variable will be included!
   function mainWorldScript() {
-    // Use context bridge API or closure variable when context isolation is disabled.
     const electron = ((window as any).electron as typeof electronContext) || electronContext
 
     const chrome = window.chrome || {}
     const extensionId = chrome.runtime?.id
 
-    // NOTE: This uses a synchronous IPC to get the extension manifest.
-    // To avoid this, JS bindings for RendererExtensionRegistry would be
-    // required.
     const manifest: chrome.runtime.Manifest =
       (extensionId && chrome.runtime.getManifest()) || ({} as any)
 
@@ -126,7 +119,6 @@ export const injectExtensionAPIs = () => {
       set() {}
       get() {}
       clear() {}
-      // onChange: chrome.types.ChromeSettingChangedEvent
     }
 
     type DeepPartial<T> = {
@@ -140,9 +132,6 @@ export const injectExtensionAPIs = () => {
       }
     }
 
-    /**
-     * Factories for each additional chrome.* API.
-     */
     const apiDefinitions: Partial<APIFactoryMap> = {
       browserAction: {
         shouldInject: () => !!manifest.browser_action,
@@ -267,7 +256,6 @@ export const injectExtensionAPIs = () => {
           return {
             ...base,
             isAllowedIncognitoAccess: () => false,
-            // TODO: Add native implementation
             getViews: () => [],
           }
         },
@@ -318,7 +306,6 @@ export const injectExtensionAPIs = () => {
           const local = base && base.local
           return {
             ...base,
-            // TODO: provide a backend for browsers to opt-in to
             managed: local,
             sync: local,
           }
@@ -330,15 +317,7 @@ export const injectExtensionAPIs = () => {
           const api = {
             ...base,
             create: invokeExtension('tabs.create'),
-            /**
-             * @see https://developer.chrome.com/docs/extensions/reference/tabs/#method-executeScript
-             * @deprecated since chrome 91
-             */
             executeScript: function (arg1: unknown, arg2: unknown, arg3: unknown) {
-              // Electron's implementation of chrome.tabs.executeScript is in
-              // C++, but it doesn't support implicit execution in the active
-              // tab. To handle this, we need to get the active tab ID and
-              // pass it into the C++ implementation ourselves.
               if (typeof arg1 === 'object') {
                 api.query(
                   { active: true, lastFocusedWindow: true },
@@ -383,15 +362,11 @@ export const injectExtensionAPIs = () => {
             onBeforeNavigate: new ExtensionEvent('webNavigation.onBeforeNavigate'),
             onCommitted: new ExtensionEvent('webNavigation.onCommitted'),
             onCompleted: new ExtensionEvent('webNavigation.onCompleted'),
-            onCreatedNavigationTarget: new ExtensionEvent(
-              'webNavigation.onCreatedNavigationTarget'
-            ),
+            onCreatedNavigationTarget: new ExtensionEvent('webNavigation.onCreatedNavigationTarget'),
             onDOMContentLoaded: new ExtensionEvent('webNavigation.onDOMContentLoaded'),
             onErrorOccurred: new ExtensionEvent('webNavigation.onErrorOccurred'),
             onHistoryStateUpdated: new ExtensionEvent('webNavigation.onHistoryStateUpdated'),
-            onReferenceFragmentUpdated: new ExtensionEvent(
-              'webNavigation.onReferenceFragmentUpdated'
-            ),
+            onReferenceFragmentUpdated: new ExtensionEvent('webNavigation.onReferenceFragmentUpdated'),
             onTabReplaced: new ExtensionEvent('webNavigation.onTabReplaced'),
           }
         },
@@ -425,6 +400,67 @@ export const injectExtensionAPIs = () => {
           }
         },
       },
+
+      bookmarks: {
+        factory: (base) => {
+          return {
+            ...base,
+            create: invokeExtension('bookmarks.create'),
+            remove: invokeExtension('bookmarks.remove'),
+            get: invokeExtension('bookmarks.get'),
+            getChildren: invokeExtension('bookmarks.getChildren'),
+            getRecent: invokeExtension('bookmarks.getRecent'),
+            search: invokeExtension('bookmarks.search'),
+            onCreated: new ExtensionEvent('bookmarks.onCreated'),
+            onRemoved: new ExtensionEvent('bookmarks.onRemoved'),
+            onChanged: new ExtensionEvent('bookmarks.onChanged'),
+            onMoved: new ExtensionEvent('bookmarks.onMoved'),
+          }
+        },
+      },
+
+      history: {
+        factory: (base) => {
+          return {
+            ...base,
+            addUrl: invokeExtension('history.addUrl'),
+            deleteAll: invokeExtension('history.deleteAll'),
+            deleteRange: invokeExtension('history.deleteRange'),
+            deleteUrl: invokeExtension('history.deleteUrl'),
+            search: invokeExtension('history.search'),
+            onVisitRemoved: new ExtensionEvent('history.onVisitRemoved'),
+            onVisited: new ExtensionEvent('history.onVisited'),
+          }
+        },
+      },
+
+      input: {
+        factory: (base) => {
+          return {
+            ...base,
+            // Define methods for input API if necessary
+          }
+        },
+      },
+
+//       TODO: add syncFileSystem API 
+//      syncFileSystem: {
+//        factory: (base: any) => {
+//          return {
+//            ...base,
+//            // Define methods for syncFileSystem API if necessary
+//          }
+//        },
+//      },
+
+      declarativeContent: {
+        factory: (base) => {
+          return {
+            ...base,
+            // Define methods for declarativeContent API if necessary
+          }
+        },
+      },
     }
 
     // Initialize APIs
@@ -433,7 +469,6 @@ export const injectExtensionAPIs = () => {
       const baseApi = chrome[apiName] as any
       const api = apiDefinitions[apiName]!
 
-      // Allow APIs to opt-out of being available in this context.
       if (api.shouldInject && !api.shouldInject()) return
 
       Object.defineProperty(chrome, apiName, {
@@ -443,24 +478,17 @@ export const injectExtensionAPIs = () => {
       })
     })
 
-    // Remove access to internals
     delete (window as any).electron
 
     Object.freeze(chrome)
 
-    void 0 // no return
+    void 0
   }
 
   try {
-    // TODO: use another featured/complex name for exposed object
-    // Expose extension IPC to main world
     contextBridge.exposeInMainWorld('electron', electronContext)
-
-    // Mutate global 'chrome' object with additional APIs in the main world.
     webFrame.executeJavaScript(`(${mainWorldScript}());`)
   } catch {
-    // contextBridge threw an error which means we're in the main world so we
-    // can just execute our function.
     mainWorldScript()
   }
 }
