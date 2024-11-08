@@ -1,7 +1,7 @@
 {
   "name": "chrome-browserAction-click",
   "version": "1.0",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "browser_action": {
     "default_title": "browserAction click"
   },

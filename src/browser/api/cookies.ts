@@ -6,13 +6,38 @@ enum CookieStoreID {
     Incognito = '1',
 }
 
+// Custom types to match chrome.cookies.Details structure
+type CookieDetails = {
+    url: string;
+    name: string;
+};
+
+type GetAllCookieDetails = CookieDetails & {
+    domain?: string;
+    path?: string;
+    secure?: boolean;
+    session?: boolean;
+};
+
+// Define a type to match the cookies.set expected structure with required url
+type CookiesSetDetails = {
+    url: string;
+    name: string;
+    value: string;
+    domain?: string;
+    path?: string;
+    secure?: boolean;
+    httpOnly?: boolean;
+    sameSite?: 'no_restriction' | 'lax' | 'strict';
+    expirationDate?: number;
+    storeId?: string;
+};
+
 const onChangedCauseTranslation: { [key: string]: string } = {
     'expired-overwrite': 'expired_overwrite',
 };
 
-const createCookieDetails = (
-    cookie: Electron.Cookie
-): chrome.cookies.Cookie => ({
+const createCookieDetails = (cookie: Electron.Cookie): chrome.cookies.Cookie => ({
     ...cookie,
     domain: cookie.domain || '',
     hostOnly: Boolean(cookie.hostOnly),
@@ -34,71 +59,40 @@ export class CookiesAPI {
         handle('cookies.getAll', this.getAll.bind(this));
         handle('cookies.set', this.set.bind(this));
         handle('cookies.remove', this.remove.bind(this));
-        handle(
-            'cookies.getAllCookieStores',
-            this.getAllCookieStores.bind(this)
-        );
+        handle('cookies.getAllCookieStores', this.getAllCookieStores.bind(this));
 
         this.cookies.addListener('changed', this.onChanged);
     }
 
-    private async get(
-        event: ExtensionEvent,
-        details: chrome.cookies.Details
-    ): Promise<chrome.cookies.Cookie | null> {
-        // TODO: storeId
+    private async get(event: ExtensionEvent, details: CookieDetails): Promise<chrome.cookies.Cookie | null> {
         const cookies = await this.cookies.get({
             url: details.url,
             name: details.name,
         });
-
-        // TODO: If more than one cookie of the same name exists for the given URL,
-        // the one with the longest path will be returned. For cookies with the
-        // same path length, the cookie with the earliest creation time will be returned.
         return cookies.length > 0 ? createCookieDetails(cookies[0]) : null;
     }
 
-    private async getAll(
-        event: ExtensionEvent,
-        details: chrome.cookies.GetAllDetails
-    ): Promise<chrome.cookies.Cookie[]> {
-        // TODO: storeId
-        const cookies = await this.cookies.get({
-            url: details.url,
-            name: details.name,
-            domain: details.domain,
-            path: details.path,
-            secure: details.secure,
-            session: details.session,
-        });
-
+    private async getAll(event: ExtensionEvent, details: GetAllCookieDetails): Promise<chrome.cookies.Cookie[]> {
+        const cookies = await this.cookies.get(details);
         return cookies.map(createCookieDetails);
     }
 
-    private async set(
-        event: ExtensionEvent,
-        details: chrome.cookies.SetDetails
-    ): Promise<chrome.cookies.Cookie | null> {
+    private async set(event: ExtensionEvent, details: CookiesSetDetails): Promise<chrome.cookies.Cookie | null> {
         await this.cookies.set(details);
-        const cookies = await this.cookies.get(details);
+        const cookies = await this.cookies.get({ url: details.url, name: details.name });
         return cookies.length > 0 ? createCookieDetails(cookies[0]) : null;
     }
 
-    private async remove(
-        event: ExtensionEvent,
-        details: chrome.cookies.Details
-    ): Promise<chrome.cookies.Details | null> {
+    private async remove(event: ExtensionEvent, details: CookieDetails): Promise<CookieDetails | null> {
         try {
             await this.cookies.remove(details.url, details.name);
+            return details;
         } catch {
             return null;
         }
-        return details;
     }
 
-    private async getAllCookieStores(
-        event: ExtensionEvent
-    ): Promise<chrome.cookies.CookieStore[]> {
+    private async getAllCookieStores(event: ExtensionEvent): Promise<chrome.cookies.CookieStore[]> {
         const tabIds = Array.from(this.ctx.store.tabs)
             .map((tab) => (tab.isDestroyed() ? undefined : tab.id))
             .filter(Boolean) as number[];
@@ -106,10 +100,7 @@ export class CookiesAPI {
     }
 
     private onChanged = (
-        event: {
-            preventDefault: () => void;
-            readonly defaultPrevented: boolean;
-        },
+        event: { preventDefault: () => void; readonly defaultPrevented: boolean },
         cookie: Electron.Cookie,
         cause: string,
         removed: boolean
@@ -119,7 +110,6 @@ export class CookiesAPI {
             cookie: createCookieDetails(cookie),
             removed,
         };
-
         this.ctx.router.broadcastEvent('cookies.onChanged', changeInfo);
     };
 }

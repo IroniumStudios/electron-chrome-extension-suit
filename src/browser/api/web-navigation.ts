@@ -30,10 +30,10 @@ const getParentFrameId = (frame: any) => {
 
 const getFrameDetails = (frame: any) => ({
     errorOccurred: false, // TODO
-    processId: frame.processId,
-    frameId: getFrameId(frame),
-    parentFrameId: getParentFrameId(frame),
-    url: frame.url,
+    processId: frame?.processId ?? -1,
+    frameId: frame ? getFrameId(frame) : -1,
+    parentFrameId: frame ? getParentFrameId(frame) : -1,
+    url: frame?.url || '',
 });
 
 export class WebNavigationAPI {
@@ -53,16 +53,17 @@ export class WebNavigationAPI {
         tab.on('did-navigate-in-page', this.onHistoryStateUpdated as any);
 
         tab.on('frame-created', (e, { frame }) => {
-            if (frame.top === frame) return;
+        //  TODO: fix null calling so it dosent errer out.
+        //    if (frame.top === frame) return;
 
-            frame.on('dom-ready', () => {
-                this.onDOMContentLoaded(tab, frame);
-            });
+        //    frame.on('dom-ready', () => {
+        //        if (frame) this.onDOMContentLoaded(tab, frame);
+        //    });
         });
 
         // Main frame dom-ready event
         tab.on('dom-ready', () => {
-            if ('mainFrame' in tab) {
+            if ('mainFrame' in tab && tab.mainFrame) {
                 this.onDOMContentLoaded(tab, tab.mainFrame);
             }
         });
@@ -95,10 +96,8 @@ export class WebNavigationAPI {
         function getFrameDetails(frame: any): chrome.webNavigation.GetFrameResultDetails {
             return {
                 errorOccurred: frame.errorOccurred,
-                // Removed the processId and frameId properties
                 parentFrameId: frame.parentFrameId,
                 url: frame.url,
-                // Add the missing properties with appropriate values
                 documentId: frame.documentId, // Replace with actual value
                 documentLifecycle: frame.documentLifecycle, // Replace with actual value
                 frameType: frame.frameType // Replace with actual value
@@ -137,7 +136,7 @@ export class WebNavigationAPI {
             {
                 sourceTabId: tab?.id,
                 sourceProcessId: frameProcessId,
-                sourceFrameId: getFrameId(frame),
+                sourceFrameId: frame ? getFrameId(frame) : -1,
                 url,
                 tabId: tab?.id,
                 timeStamp: Date.now(),
@@ -159,8 +158,8 @@ export class WebNavigationAPI {
         const tab = event.sender;
         const details: chrome.webNavigation.WebNavigationParentedCallbackDetails =
             {
-                frameId: getFrameId(frame),
-                parentFrameId: getParentFrameId(frame),
+                frameId: frame ? getFrameId(frame) : -1,
+                parentFrameId: frame ? getParentFrameId(frame) : -1,
                 processId: frameProcessId,
                 tabId: tab?.id,
                 timeStamp: Date.now(),
@@ -185,8 +184,8 @@ export class WebNavigationAPI {
         const tab = event.sender;
         const details: chrome.webNavigation.WebNavigationParentedCallbackDetails =
             {
-                frameId: getFrameId(frame),
-                parentFrameId: getParentFrameId(frame),
+                frameId: frame ? getFrameId(frame) : -1,
+                parentFrameId: frame ? getParentFrameId(frame) : -1,
                 processId: frameProcessId,
                 tabId: tab?.id,
                 timeStamp: Date.now(),
@@ -213,14 +212,14 @@ export class WebNavigationAPI {
         } = {
           transitionType: '', // TODO
           transitionQualifiers: [], // TODO
-          frameId: getFrameId(frame),
-          parentFrameId: getParentFrameId(frame),
+          frameId: frame ? getFrameId(frame) : -1,
+          parentFrameId: frame ? getParentFrameId(frame) : -1,
           processId: frameProcessId,
           tabId: tab.id,
           timeStamp: Date.now(),
           url,
-          frameType: frame.frameType || 'other',
-          documentLifecycle: frame.documentLifecycle || [],
+          frameType: frame?.frameType || 'other',
+          documentLifecycle: frame?.documentLifecycle || [],
         };
         this.sendNavigationEvent('onHistoryStateUpdated', details);
       };  
@@ -258,8 +257,8 @@ export class WebNavigationAPI {
         const url = tab?.getURL();
         const details: chrome.webNavigation.WebNavigationParentedCallbackDetails =
             {
-                frameId: getFrameId(frame),
-                parentFrameId: getParentFrameId(frame),
+                frameId: frame ? getFrameId(frame) : -1,
+                parentFrameId: frame ? getParentFrameId(frame) : -1,
                 processId: frameProcessId,
                 tabId: tab?.id,
                 timeStamp: Date.now(),
