@@ -1,6 +1,6 @@
 {
     "name": "electron-chrome-extensions-suit",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Chrome extension support for Electron, the original Project has been left un attended to so i decided to modernize it, enjoy :)",
     "main": "dist/index.js",
     "scripts": {
@@ -42,7 +42,7 @@
         "chai": "^5.1.2",
         "chai-as-promised": "^8.0.0",
         "colors": "^1.4.0",
-        "electron": "^33.1.0",
+        "electron": "^33.2.0",
         "esbuild": "^0.24.0",
         "mocha": "^10.8.2",
         "ts-loader": "^9.5.1",
@@ -59,7 +59,7 @@
                 "@babel/preset-env",
                 {
                     "targets": {
-                        "electron": "33.0.2"
+                        "electron": "33.2.0"
                     }
                 }
             ],
@@ -80,5 +80,6 @@
                 }
             ]
         ]
-    }
+    },
+    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
