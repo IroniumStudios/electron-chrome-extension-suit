@@ -1,6 +1,6 @@
 {
     "name": "electron-chrome-extensions-suit",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "Chrome extension support for Electron, the original Project has been left un attended to so i decided to modernize it, enjoy :)",
     "main": "dist/index.js",
     "scripts": {
