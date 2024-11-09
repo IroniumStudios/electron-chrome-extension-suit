@@ -38,17 +38,17 @@ interface ActivateDetails {
 
 const getBrowserActionDefaults = (extension: Electron.Extension): ExtensionAction | undefined => {
   const manifest = getExtensionManifest(extension)
-  const { browser_action } = manifest
-  if (typeof browser_action === 'object') {
-    const action: ExtensionAction = {}
+  const actionDef = manifest.browser_action || manifest.action; // Support for both MV2 and MV3
 
-    action.title = browser_action.default_title || manifest.name
+  if (typeof actionDef === 'object') {
+    const action: ExtensionAction = {}
+    action.title = actionDef.default_title || manifest.name
 
     const iconPath = getIconPath(extension)
     if (iconPath) action.icon = { path: iconPath }
 
-    if (browser_action.default_popup) {
-      action.popup = browser_action.default_popup
+    if (actionDef.default_popup) {
+      action.popup = actionDef.default_popup
     }
 
     return action
