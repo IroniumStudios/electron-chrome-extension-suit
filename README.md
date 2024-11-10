@@ -1,6 +1,6 @@
 # electron-chrome-extensions-suit
 
-> Chrome extension API support for Electron, Chrome extension support for Electron, the original Project has been left un attended to so i decided to modernize it, enjoy :)
+> Chrome extension API support for Electron, now with Manefest V3 Support, originally the developer has not updated there project in a while so i decided to fork the project and add some modifications to it.
 
 Electron provides [basic support for Chrome extensions](https://www.electronjs.org/docs/api/extensions)  out of the box. However, it only supports a subset of APIs with a focus on DevTools. Concepts like tabs, popups, and extension actions aren't known to Electron.
 
