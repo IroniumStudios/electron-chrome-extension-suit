@@ -1,5 +1,4 @@
-# License from the original package (NOTE: this package will not stay forever I am only using it as I added custom mv3 support, when then dev releases a new version with 
-mv3 then I will take this project down, this is there license tho I wanted to leave this here so that way its all clear and doesn't make any trouble)
+# License from the original package (NOTE: this package will not stay forever I am only using it as I added custom mv3 support, when then dev releases a new version with mv3 then I will take this project down, this is there license tho I wanted to leave this here so that way its all clear and doesn't make any trouble)
 
 # Patron License
 
