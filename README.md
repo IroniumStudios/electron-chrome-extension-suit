@@ -1,3 +1,7 @@
+#NOTE: as you could possibly tell this is just a fork, i do now own or take credit for this work, i am just using this updated code to fix problems i have with the original.
+
+
+
 # electron-chrome-extensions-suit
 
 > Chrome extension API support for Electron, now with Manifest V3 Support, this project is not staaying forever, as the devs of the original project have returned, when the devs make it more modern and use manifest v3 i will delete this project
