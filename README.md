@@ -1,5 +1,3 @@
-# Fixed spellig errors.
-
 # NOTE: as you could possibly tell this is just a fork, i do not own or take credit for this work, i am just using this updated code to fix problems i have with the original.
 
 
@@ -32,7 +30,7 @@ Simple browser using Electron's [default session](https://www.electronjs.org/doc
 
 ```js
 const { app, BrowserWindow } = require('electron')
-const { ElectronChromeExtensions } = require('electron-chrome-extensions')
+const { ElectronChromeExtensions } = require('electron-chrome-extensions-suit')
 
 (async function main() {
   await app.whenReady()
