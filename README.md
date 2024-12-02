@@ -1,4 +1,6 @@
-#NOTE: as you could possibly tell this is just a fork, i do not own or take credit for this work, i am just using this updated code to fix problems i have with the original.
+# Fixed spellig errors.
+
+# NOTE: as you could possibly tell this is just a fork, i do not own or take credit for this work, i am just using this updated code to fix problems i have with the original.
 
 
 
